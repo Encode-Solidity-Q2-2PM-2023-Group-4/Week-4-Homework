@@ -55,7 +55,7 @@ export class AppService {
   }
 
   async selfDelegate(address: string): Promise<any> {
-    console.log("Self delegating votes...");
+    console.log("Self-delegating votes...");
     const tx = await this.tokenContract.delegate(address);
     const receipt = await tx.wait();
     console.log(receipt);

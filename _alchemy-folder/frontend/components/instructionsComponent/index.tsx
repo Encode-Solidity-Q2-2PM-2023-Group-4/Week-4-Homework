@@ -1,7 +1,8 @@
 import { useAccount, useBalance, useContractRead, useNetwork } from "wagmi";
 import styles from "./instructionsComponent.module.css";
 import { useState } from "react";
-import tokenJson from '../../../../_nest-backend/src/assets/MyToken.json'
+import tokenJson from '../../../../_nest-backend/src/assets/MyToken.json';
+import ballotJson from '../../../../_blockchain/artifacts/contracts/TokenizedBallot.sol/TokenizedBallot.json';
 import 'dotenv/config';
 require('dotenv').config();
 
@@ -47,6 +48,7 @@ function WalletInfo() {
         <WalletBalance address={address}></WalletBalance>
         <TokenName></TokenName>
         <TokenBalance address={address}></TokenBalance>
+        <SeeVotingPower address={address}></SeeVotingPower>
       </div>
     );
   if (isConnecting)
@@ -91,8 +93,8 @@ function TokenName() {
 
   const name = typeof data === "string" ? data : 0;
 
-  if (isLoading) return <div>Fetching name…</div>;
-  if (isError) return <div>Error fetching name.</div>;
+  if (isLoading) return <p>Fetching name…</p>;
+  if (isError) return <p>Error fetching name.</p>;
   return <p>Token name: {name}</p>;
 }
 
@@ -106,9 +108,24 @@ function TokenBalance(params: { address: `0x${string}` }) {
 
   const balance = typeof data === "bigint" ? data : 0;
 
-  if (isLoading) return <div>Fetching balance…</div>;
-  if (isError) return <div>Error fetching balance.</div>;
+  if (isLoading) return <p>Fetching balance...</p>;
+  if (isError) return <p>Error fetching balance.</p>;
   return <p>Token balance: <b>{Number(balance)}</b> decimal units of <b>VoteToken2</b>.</p>;
+}
+
+function SeeVotingPower(params: { address: `0x${string}` }) {
+  const { data, isError, isLoading } = useContractRead({
+    address: "0xf000ef058FF6851b12Ff35F5176BF4Ef46f2f7B9",
+    abi: ballotJson.abi,
+    functionName: "votingPower",
+    args: [params.address],
+  });
+
+  const votePower = typeof data === "bigint" ? data : 0;
+
+  if (isLoading) return <p>Fetching voting power...</p>
+  if (isError) return <p>Error fetching voting power.</p>
+  return <p>Voting power: <b>{Number(votePower)}</b></p>
 }
 
 function DelegateVote(params: { address: `0x${string}` | undefined }) {
