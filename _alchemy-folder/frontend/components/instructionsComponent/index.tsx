@@ -1,4 +1,4 @@
-import { useAccount, useBalance, useContractRead, useNetwork } from "wagmi";
+import { useAccount, useBalance, useContractRead, useNetwork, usePrepareSendTransaction, useSendTransaction } from "wagmi";
 import styles from "./instructionsComponent.module.css";
 import { useState } from "react";
 import tokenJson from '../../../../_nest-backend/src/assets/MyToken.json';
@@ -19,6 +19,8 @@ export default function InstructionsComponent() {
         </div>
       </header>
       <WalletInfo></WalletInfo>
+      <TransferTokens></TransferTokens>
+      <VoteWithToken></VoteWithToken>
       <PageBody></PageBody>
     </div>
   );
@@ -43,8 +45,8 @@ function WalletInfo() {
   if (address)
     return (
       <div>
-        <p>Your account address is {address}.</p>
-        <p>Connected to the {chain?.name} network.</p>
+        <p>Your account address is <b>{address}</b>.</p>
+        <p>Connected to the <b>{chain?.name}</b> network.</p>
         <WalletBalance address={address}></WalletBalance>
         <TokenName></TokenName>
         <TokenBalance address={address}></TokenBalance>
@@ -75,8 +77,8 @@ function WalletBalance(params: { address: `0x${string}` }) {
     address: params.address,
   });
 
-  if (isLoading) return <div>Fetching balance…</div>;
-  if (isError) return <div>Error fetching balance.</div>;
+  if (isLoading) return <p>Fetching balance…</p>;
+  if (isError) return <p>Error fetching balance.</p>;
   return (
     <div>
       <p>Balance: <b>{data?.formatted} {data?.symbol}</b></p>
@@ -95,7 +97,7 @@ function TokenName() {
 
   if (isLoading) return <p>Fetching name…</p>;
   if (isError) return <p>Error fetching name.</p>;
-  return <p>Token name: {name}</p>;
+  return <p>Token name: <b>{name}</b></p>;
 }
 
 function TokenBalance(params: { address: `0x${string}` }) {
@@ -242,4 +244,117 @@ function MintTokens(params: { address: `0x${string}` | undefined }) {
       </a>
     </div>
   )
+}
+
+function TransferTokens() {
+  const { config } = usePrepareSendTransaction();
+  const { data, isLoading, isSuccess, sendTransaction } = useSendTransaction(config)
+  const [to, setTo] = useState("");
+  const [value, setValue] = useState("");
+
+
+  if (isLoading) return <p>Requesting transfer from API...</p>;
+
+      const objStr = {
+        to: to,
+        value: value,
+      };
+
+      const requestOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(objStr)
+      };
+
+
+  if (!data) return (
+    <><div>
+      <form>
+        <label>
+          Enter 'to' address':
+          <input
+            type="text"
+            value={to}
+            onChange={(e) => setTo(e.target.value)} />
+        </label>
+      </form>
+      <form>
+        <label>
+          Enter amount of tokens to transfer:
+          <input
+            type="number"
+            value={value}
+            onChange={(e) => setValue(e.target.value)} />
+        </label>
+      </form>
+    </div><div>
+        <button
+          //disabled={isLoading} 
+          onClick={() => fetch("http://localhost:3001/transfer-tokens", requestOptions)}>
+
+          Send Tokens
+
+        </button>
+        {isLoading && <div>Check Wallet</div>}
+        {isSuccess && <div>Transaction: {JSON.stringify(data)}</div>}
+      </div></>
+    )
+    return <></>
+}
+
+
+function VoteWithToken() {
+  const { config } = usePrepareSendTransaction();
+  const { data, isLoading, isSuccess, sendTransaction } = useSendTransaction(config)
+  const [proposalId, setProposalId] = useState("");
+  const [amount, setAmount] = useState("");
+
+
+  if (isLoading) return <p>Requesting transfer from API...</p>;
+
+      const objStr = {
+        proposalId: proposalId,
+        amount: amount,
+      };
+
+      const requestOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(objStr)
+      };
+
+
+  if (!data) return (
+    <><div>
+      <form>
+        <label>
+          Enter proposal id:
+          <input
+            type="text"
+            value={proposalId}
+            onChange={(e) => setProposalId(e.target.value)} />
+        </label>
+      </form>
+      <form>
+        <label>
+          Enter amount of tokens to vote with:
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)} />
+        </label>
+      </form>
+    </div><div>
+        <button
+          //disabled={isLoading} 
+          onClick={() => fetch("http://localhost:3001/vote", requestOptions)}>
+
+          Vote Now
+
+        </button>
+        {isLoading && <div>Check Wallet</div>}
+        {isSuccess && <div>Transaction: {JSON.stringify(data)}</div>}
+      </div></>
+    )
+    return <></>
 }
