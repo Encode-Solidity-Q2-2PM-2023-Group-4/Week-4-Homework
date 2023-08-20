@@ -6,7 +6,8 @@ require('dotenv').config();
 
 @Injectable()
 export class AppService {
-  contract: ethers.Contract;
+  tokenContract: ethers.Contract;
+  ballotContract: ethers.Contract;
   provider: ethers.Provider;
   wallet: ethers.Wallet;
 
@@ -18,7 +19,7 @@ export class AppService {
       process.env.PRIVATE_KEY ?? '', 
       this.provider,
     );
-    this.contract = new ethers.Contract(
+    this.tokenContract = new ethers.Contract(
       process.env.TOKEN_ADDRESS,
       tokenJson.abi,
       this.wallet,
@@ -38,16 +39,24 @@ export class AppService {
   }
   
   getTotalSupply(): Promise<bigint> {
-    return this.contract.totalSupply();
+    return this.tokenContract.totalSupply();
   }
 
   getTokenBalance(address: string): Promise<bigint> {
-    return this.contract.balanceOf(address);
+    return this.tokenContract.balanceOf(address);
   }
 
   async mintTokens(address: string): Promise<any> {
-    console.log("Minting tx to " + address)
-    const tx = await this.contract.mint(address, ethers.parseUnits("1"));
+    console.log("Minting tx to " + address);
+    const tx = await this.tokenContract.mint(address, ethers.parseUnits("1"));
+    const receipt = await tx.wait();
+    console.log(receipt);
+    return { success: true, txHash: tx.hash };
+  }
+
+  async selfDelegate(address: string): Promise<any> {
+    console.log("Self-delegating votes...");
+    const tx = await this.tokenContract.delegate(address);
     const receipt = await tx.wait();
     console.log(receipt);
     return { success: true, txHash: tx.hash };

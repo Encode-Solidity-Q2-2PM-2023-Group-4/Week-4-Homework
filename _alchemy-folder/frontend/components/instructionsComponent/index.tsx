@@ -1,6 +1,10 @@
-import { useAccount, useNetwork } from "wagmi";
+import { useAccount, useBalance, useContractRead, useNetwork } from "wagmi";
 import styles from "./instructionsComponent.module.css";
 import { useState } from "react";
+import tokenJson from '../../../../_nest-backend/src/assets/MyToken.json';
+import ballotJson from '../../../../_blockchain/artifacts/contracts/TokenizedBallot.sol/TokenizedBallot.json';
+import 'dotenv/config';
+require('dotenv').config();
 
 export default function InstructionsComponent() {
   return (
@@ -25,7 +29,7 @@ function PageBody() {
 
   return (
     <div className={styles.buttons_container}>
-      <DelegateVote></DelegateVote>
+      <DelegateVote address={address}></DelegateVote>
       <PlaceVote></PlaceVote>
       <SeeCurrentVotes></SeeCurrentVotes>
       <MintTokens address={address}></MintTokens>
@@ -41,6 +45,10 @@ function WalletInfo() {
       <div>
         <p>Your account address is {address}.</p>
         <p>Connected to the {chain?.name} network.</p>
+        <WalletBalance address={address}></WalletBalance>
+        <TokenName></TokenName>
+        <TokenBalance address={address}></TokenBalance>
+        <SeeVotingPower address={address}></SeeVotingPower>
       </div>
     );
   if (isConnecting)
@@ -62,11 +70,111 @@ function WalletInfo() {
   );
 }
 
-function DelegateVote() {
+function WalletBalance(params: { address: `0x${string}` }) {
+  const { data, isError, isLoading } = useBalance({
+    address: params.address,
+  });
+
+  if (isLoading) return <div>Fetching balance…</div>;
+  if (isError) return <div>Error fetching balance.</div>;
   return (
-    <button className={styles.button}>
-      <p>Delegate Vote</p>
+    <div>
+      <p>Balance: <b>{data?.formatted} {data?.symbol}</b></p>
+    </div>
+  );
+}
+
+function TokenName() {
+  const { data, isError, isLoading } = useContractRead({
+    address: "0x28ee359f1Cee296a0813e35e8c61d16fA4F5388e",
+    abi: tokenJson.abi,
+    functionName: "name",
+  });
+
+  const name = typeof data === "string" ? data : 0;
+
+  if (isLoading) return <p>Fetching name…</p>;
+  if (isError) return <p>Error fetching name.</p>;
+  return <p>Token name: {name}</p>;
+}
+
+function TokenBalance(params: { address: `0x${string}` }) {
+  const { data, isError, isLoading } = useContractRead({
+    address: "0x28ee359f1Cee296a0813e35e8c61d16fA4F5388e",
+    abi: tokenJson.abi,
+    functionName: "balanceOf",
+    args: [params.address],
+  });
+
+  const balance = typeof data === "bigint" ? data : 0;
+
+  if (isLoading) return <p>Fetching balance...</p>;
+  if (isError) return <p>Error fetching balance.</p>;
+  return <p>Token balance: <b>{Number(balance)}</b> decimal units of <b>VoteToken2</b>.</p>;
+}
+
+function SeeVotingPower(params: { address: `0x${string}` }) {
+  const { data, isError, isLoading } = useContractRead({
+    address: "0xf000ef058FF6851b12Ff35F5176BF4Ef46f2f7B9",
+    abi: ballotJson.abi,
+    functionName: "votingPower",
+    args: [params.address],
+  });
+
+  const votePower = typeof data === "bigint" ? data : 0;
+
+  if (isLoading) return <p>Fetching voting power...</p>
+  if (isError) return <p>Error fetching voting power.</p>
+  return <p>Voting power: <b>{Number(votePower)}</b></p>
+}
+
+function DelegateVote(params: { address: `0x${string}` | undefined }) {
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setLoading] = useState(false);
+
+  const requestOptions = {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ address: params.address })
+  };
+
+  if (isLoading) return (
+    <div className={styles.button}>
+      Delegating votes with API...
+    </div>
+  )
+
+  if (!data) return <p>
+    <button
+        disabled={isLoading}
+        className={styles.button}
+        onClick={() => {
+          setLoading(true);
+          fetch("http://localhost:3001/self-delegate", requestOptions)
+          .then((res) => res.json())
+          .then((data) => {
+            setData(data);
+            setLoading(false)
+          });
+        }}
+    >
+      Delegate Votes
     </button>
+  </p>;
+
+  const hash = String(data.txHash);
+  const ETHScanLink = "https://sepolia.etherscan.io/tx/" + hash;
+  const shortHash = hash.slice(0,5) + "..." + hash.slice(-3)
+
+  return (
+    <div className={styles.buttonTXConf}>
+      Tx hash: <a href={ETHScanLink}
+        target="_blank"
+        rel="noreferrer noopener"
+      >
+        {shortHash}
+      </a>
+    </div>
   )
 }
 
