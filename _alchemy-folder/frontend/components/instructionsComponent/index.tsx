@@ -1,6 +1,9 @@
-import { useAccount, useNetwork } from "wagmi";
+import { useAccount, useBalance, useContractRead, useNetwork } from "wagmi";
 import styles from "./instructionsComponent.module.css";
 import { useState } from "react";
+import tokenJson from '../../../../_nest-backend/src/assets/MyToken.json'
+import 'dotenv/config';
+require('dotenv').config();
 
 export default function InstructionsComponent() {
   return (
@@ -41,6 +44,9 @@ function WalletInfo() {
       <div>
         <p>Your account address is {address}.</p>
         <p>Connected to the {chain?.name} network.</p>
+        <WalletBalance address={address}></WalletBalance>
+        <TokenName></TokenName>
+        <TokenBalance address={address}></TokenBalance>
       </div>
     );
   if (isConnecting)
@@ -60,6 +66,49 @@ function WalletInfo() {
       <p>Connect wallet to continue.</p>
     </div>
   );
+}
+
+function WalletBalance(params: { address: `0x${string}` }) {
+  const { data, isError, isLoading } = useBalance({
+    address: params.address,
+  });
+
+  if (isLoading) return <div>Fetching balance…</div>;
+  if (isError) return <div>Error fetching balance.</div>;
+  return (
+    <div>
+      <b>Balance: {data?.formatted} {data?.symbol}</b>
+    </div>
+  );
+}
+
+function TokenName() {
+  const { data, isError, isLoading } = useContractRead({
+    address: "0x28ee359f1Cee296a0813e35e8c61d16fA4F5388e",
+    abi: tokenJson.abi,
+    functionName: "name",
+  });
+
+  const name = typeof data === "string" ? data : 0;
+
+  if (isLoading) return <div>Fetching name…</div>;
+  if (isError) return <div>Error fetching name.</div>;
+  return <div>Token name: {name}</div>;
+}
+
+function TokenBalance(params: { address: `0x${string}` }) {
+  const { data, isError, isLoading } = useContractRead({
+    address: "0x28ee359f1Cee296a0813e35e8c61d16fA4F5388e",
+    abi: tokenJson.abi,
+    functionName: "balanceOf",
+    args: [params.address],
+  });
+
+  const balance = typeof data === "bigint" ? data : 0;
+
+  if (isLoading) return <div>Fetching balance…</div>;
+  if (isError) return <div>Error fetching balance.</div>;
+  return <div><b>Token balance: {Number(balance)}</b></div>;
 }
 
 function DelegateVote() {
