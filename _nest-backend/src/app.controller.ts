@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { AppService } from './app.service';
-import { MintTokenDTO } from './dtos/mintToken.dto';
-import { DelegateVotesDTO } from './dtos/selfDelegate.dto';
+import { MintTokenDto } from './dtos/mintToken.dto';
+import { TransferTokensDto } from './dtos/transferToken.dto';
+import { voteDto } from './dtos/vote.dto';
 
 @Controller()
 export class AppController {
@@ -17,30 +18,39 @@ export class AppController {
     return this.appService.getAnotherThing();
   }
 
-  @Get("token-address")
-  getTokenAddress(): any {
-    return this.appService.getTokenAddress();
-  }
-
-  @Get('total-supply')
-  getTotalSupply(): Promise<bigint> {
+  @Get("total-supply")
+  getTotalSupply() {
     return this.appService.getTotalSupply();
   }
 
-  @Get('token-balance/:address')
-  getTokenBalance(@Param('address') address: string): any {
-    return { balance: this.appService.getTokenBalance(address) };
+  @Get('contract-address')
+  getContractAddress(): any {
+    return this.appService.getContractAddress();
   }
 
-  @Post('mint-tokens')
-  async mintTokens(@Body() body: MintTokenDTO): Promise<any> {
-    console.log({ body });
-    return await this.appService.mintTokens(body.address);
+  @Get("token-balance/:address")
+  getTokenBalance(@Param('address') address: string) {
+    return this.appService.getTokenBalance(address);
   }
 
-  @Post('self-delegate')
-  async selfDelegate(@Body() body: DelegateVotesDTO): Promise<any> {
-    console.log({ body });
-    return await this.appService.selfDelegate(body.address);
+  @Post("mint-tokens")
+  async mintTokens(@Body() body:MintTokenDto){
+    console.log({ body })
+    const result = await this.appService.mintTokens(body.address);
+    return result
+  }
+
+  @Post("transfer-tokens")
+  async transferTokens(@Body() body:TransferTokensDto){
+    console.log({ body })
+    const result = await this.appService.transferTokens(body.to, body.value);
+    return result
+  }
+
+  @Post("vote")
+  async vote(@Body() body:voteDto){
+    console.log({ body })
+    const result = await this.appService.vote(body.proposalId, body.amount);
+    return result
   }
 }
