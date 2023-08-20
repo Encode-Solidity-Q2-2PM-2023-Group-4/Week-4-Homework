@@ -28,7 +28,7 @@ function PageBody() {
 
   return (
     <div className={styles.buttons_container}>
-      <DelegateVote></DelegateVote>
+      <DelegateVote address={address}></DelegateVote>
       <PlaceVote></PlaceVote>
       <SeeCurrentVotes></SeeCurrentVotes>
       <MintTokens address={address}></MintTokens>
@@ -111,11 +111,53 @@ function TokenBalance(params: { address: `0x${string}` }) {
   return <p>Token balance: <b>{Number(balance)}</b> decimal units of <b>VoteToken2</b>.</p>;
 }
 
-function DelegateVote() {
-  return (
-    <button className={styles.button}>
-      <p>Delegate Vote</p>
+function DelegateVote(params: { address: `0x${string}` | undefined }) {
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setLoading] = useState(false);
+
+  const requestOptions = {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ address: params.address })
+  };
+
+  if (isLoading) return (
+    <div className={styles.button}>
+      Delegating votes with API...
+    </div>
+  )
+
+  if (!data) return <p>
+    <button
+        disabled={isLoading}
+        className={styles.button}
+        onClick={() => {
+          setLoading(true);
+          fetch("http://localhost:3001/self-delegate", requestOptions)
+          .then((res) => res.json())
+          .then((data) => {
+            setData(data);
+            setLoading(false)
+          });
+        }}
+    >
+      Delegate Votes
     </button>
+  </p>;
+
+  const hash = String(data.txHash);
+  const ETHScanLink = "https://sepolia.etherscan.io/tx/" + hash;
+  const shortHash = hash.slice(0,5) + "..." + hash.slice(-3)
+
+  return (
+    <div className={styles.buttonTXConf}>
+      Tx hash: <a href={ETHScanLink}
+        target="_blank"
+        rel="noreferrer noopener"
+      >
+        {shortHash}
+      </a>
+    </div>
   )
 }
 
