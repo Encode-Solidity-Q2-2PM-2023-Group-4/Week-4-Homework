@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ethers } from 'ethers';
-import * as tokenJson from './assets/myToken.json'
+import * as tokenJson from './assets/MyToken.json'
 import 'dotenv/config';
 require('dotenv').config();
-
-const TOKEN_ADDRESS = "0x4A3f928B2909C33A8c27400F109f3C07FB5aE9A8";
 
 @Injectable()
 export class AppService {
@@ -36,7 +34,7 @@ export class AppService {
   }
 
   getTokenAddress(): any {
-    return {address: TOKEN_ADDRESS};
+    return { address: process.env.TOKEN_ADDRESS };
   }
   
   getTotalSupply(): Promise<bigint> {

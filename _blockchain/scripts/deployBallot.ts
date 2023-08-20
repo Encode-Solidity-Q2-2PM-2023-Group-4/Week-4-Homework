@@ -10,7 +10,7 @@ function setupProvider() {
 
 async function main() {
     // Gather inputs
-    const TKNaddress = process.env.VOTING_TOKEN_ADDRESS ?? "";
+    const TKNaddress = process.env.TOKEN_ADDRESS ?? "";
     const targetBlockNum = process.argv[2];
     const proposals = process.argv.slice(3);
     console.log(`\nDeploying Ballot contract at block number ${targetBlockNum}.`);

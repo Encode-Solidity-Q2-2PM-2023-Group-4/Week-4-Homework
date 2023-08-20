@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
 contract MyToken is ERC20, AccessControl, ERC20Permit, ERC20Votes {
 
-    constructor() ERC20("VoteToken", "VTK") ERC20Permit("MyToken") {
+    constructor() ERC20("VoteToken2", "VT2") ERC20Permit("MyToken") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 

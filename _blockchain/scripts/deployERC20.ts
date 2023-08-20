@@ -17,10 +17,10 @@ async function main() {
     if (balance < 0.01) {
         throw new Error("Not enough ether.");
     }
-    const ballotFactory = new MyToken__factory(wallet);
-    const ballotContract = await ballotFactory.deploy();
-    await ballotContract.waitForDeployment();
-    const address = await ballotContract.getAddress();
+    const tokenFactory = new MyToken__factory(wallet);
+    const tokenContract = await tokenFactory.deploy();
+    await tokenContract.waitForDeployment();
+    const address = await tokenContract.getAddress();
     console.log(`\nVoting Token contract deployed to the address ${address}.`)
     console.log(`Wallet balance ${balance}.`);
 }

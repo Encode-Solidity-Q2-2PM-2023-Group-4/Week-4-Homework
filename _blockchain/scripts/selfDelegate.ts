@@ -21,7 +21,7 @@ async function main() {
   // Attach
   const ballotContract = new ethers.Contract(process.env.BALLOT_ADDRESS ?? "", BallotJSON.abi, signer);
   const tokenContractFactory = new MyToken__factory(signer);
-  const tokenContract = tokenContractFactory.attach(process.env.VOTING_TOKEN_ADDRESS ?? "") as MyToken;
+  const tokenContract = tokenContractFactory.attach(process.env.TOKEN_ADDRESS ?? "") as MyToken;
 
   // Check the voting power
   const votes = await ballotContract.votingPower(signer.address);

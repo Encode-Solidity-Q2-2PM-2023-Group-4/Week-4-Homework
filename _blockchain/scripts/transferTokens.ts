@@ -22,7 +22,7 @@ async function main() {
     
   // Attach
   const tokenContractFactory = new MyToken__factory(signer);
-  const tokenContract = tokenContractFactory.attach(process.env.VOTING_TOKEN_ADDRESS ?? "") as MyToken;
+  const tokenContract = tokenContractFactory.attach(process.env.TOKEN_ADDRESS ?? "") as MyToken;
 
   // transfer from deployer to input account
   const transferTx = await tokenContract.connect(signer).transfer(addressTo, TX_VALUE);
