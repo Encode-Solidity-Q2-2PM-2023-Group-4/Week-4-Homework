@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { AppService } from './app.service';
 import { MintTokenDTO } from './dtos/mintToken.dto';
+import { DelegateVotesDTO } from './dtos/selfDelegate.dto';
 
 @Controller()
 export class AppController {
@@ -35,5 +36,11 @@ export class AppController {
   async mintTokens(@Body() body: MintTokenDTO): Promise<any> {
     console.log({ body });
     return await this.appService.mintTokens(body.address);
+  }
+
+  @Post('self-delegate')
+  async selfDelegate(@Body() body: DelegateVotesDTO): Promise<any> {
+    console.log({ body });
+    return await this.appService.selfDelegate(body.address);
   }
 }

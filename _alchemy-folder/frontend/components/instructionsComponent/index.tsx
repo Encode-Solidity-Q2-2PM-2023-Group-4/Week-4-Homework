@@ -77,7 +77,7 @@ function WalletBalance(params: { address: `0x${string}` }) {
   if (isError) return <div>Error fetching balance.</div>;
   return (
     <div>
-      <b>Balance: {data?.formatted} {data?.symbol}</b>
+      <p>Balance: <b>{data?.formatted} {data?.symbol}</b></p>
     </div>
   );
 }
@@ -93,7 +93,7 @@ function TokenName() {
 
   if (isLoading) return <div>Fetching name…</div>;
   if (isError) return <div>Error fetching name.</div>;
-  return <div>Token name: {name}</div>;
+  return <p>Token name: {name}</p>;
 }
 
 function TokenBalance(params: { address: `0x${string}` }) {
@@ -108,7 +108,7 @@ function TokenBalance(params: { address: `0x${string}` }) {
 
   if (isLoading) return <div>Fetching balance…</div>;
   if (isError) return <div>Error fetching balance.</div>;
-  return <div><b>Token balance: {Number(balance)}</b></div>;
+  return <p>Token balance: <b>{Number(balance)}</b> decimal units of <b>VoteToken2</b>.</p>;
 }
 
 function DelegateVote() {
