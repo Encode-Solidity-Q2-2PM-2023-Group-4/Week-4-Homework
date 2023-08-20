@@ -16,8 +16,6 @@ Repo for Nanda Girish, Antony Siahaan, Adam Czopp and Linus Kelsey to complete t
 Linus - We could create separate pages in the frontend for each action we want to perform, just like in the example Alchemy dApp when you initialise a project. (UPDATE) Separate pages actually seem a bit more complex as then we would need to use multiple ports, and I can't work out where to find the 'active' port for the frontend, it's not as immediate as in the backend and `main.ts`.
 
 ## What we're working on right now
-Linus - Building mint function in backend and linking with API; ballot contract tidy up;
+Linus - ballot contract tidy up and delegate;
 Adam - transfer and vote
 Antony - Adding features to homepage
-
-TEST COMMIT
