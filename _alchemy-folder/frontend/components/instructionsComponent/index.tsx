@@ -1,38 +1,34 @@
-import { useAccount, useBalance, useContractRead, useNetwork } from "wagmi";
 import styles from "./instructionsComponent.module.css";
-import { useState } from "react";
-import tokenJson from '../../../../_nest-backend/src/assets/MyToken.json';
-import ballotJson from '../../../../_blockchain/artifacts/contracts/TokenizedBallot.sol/TokenizedBallot.json';
-import 'dotenv/config';
-require('dotenv').config();
+import { useAccount, useNetwork, useBalance, useWalletClient, useSignMessage, useSendTransaction, usePrepareSendTransaction, useConnect, useContractRead } from 'wagmi';
+import { useState, useEffect } from 'react';
+import { ethers } from 'ethers';
+
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();};
 
 export default function InstructionsComponent() {
   return (
     <div className={styles.container}>
       <header className={styles.header_container}>
         <div className={styles.header}>
-          <h1>
-            Web3<span> Voting dApp</span>
-          </h1>
-          <h3>The Encode Club's Solidity Bootcamp fourth week homework</h3>
-          <p>Completed by Nanda Girish, Antony Siahaan, Adam Czopp and Linus Kelsey.</p>
+          <h1>VotePro</h1>
         </div>
       </header>
-      <WalletInfo></WalletInfo>
-      <PageBody></PageBody>
+      <p className={styles.get_started}>
+        <PageBody></PageBody>
+      </p>
     </div>
   );
 }
 
 function PageBody() {
-  const { address } = useAccount();
-
   return (
-    <div className={styles.buttons_container}>
-      <DelegateVote address={address}></DelegateVote>
-      <PlaceVote></PlaceVote>
-      <SeeCurrentVotes></SeeCurrentVotes>
-      <MintTokens address={address}></MintTokens>
+    <div>
+      <TokenName></TokenName>
+      <TokenAddressFromApi></TokenAddressFromApi>
+      <TransferTokens></TransferTokens>
+      <VoteWithToken></VoteWithToken>
+      <WalletInfo></WalletInfo>
     </div>
   )
 }
@@ -43,29 +39,60 @@ function WalletInfo() {
   if (address)
     return (
       <div>
-        <p>Your account address is {address}.</p>
-        <p>Connected to the {chain?.name} network.</p>
+        <p>Your account address is {address}</p>
+        <p>Connected to the network {chain?.name}</p>
         <WalletBalance address={address}></WalletBalance>
-        <TokenName></TokenName>
         <TokenBalance address={address}></TokenBalance>
-        <SeeVotingPower address={address}></SeeVotingPower>
+        <ReuqestTokensToBeMinted address={address}></ReuqestTokensToBeMinted>
       </div>
     );
   if (isConnecting)
     return (
       <div>
-        <p>Connecting wallet...</p>
+        <p>Loading...</p>
       </div>
     );
   if (isDisconnected)
     return (
       <div>
-        <p>Wallet disconnected. Connect wallet to continue.</p>
+        <p>Wallet disconnected. Connect wallet to continue</p>
       </div>
     );
   return (
     <div>
-      <p>Connect wallet to continue.</p>
+      <p>Connect wallet to continue</p>
+    </div>
+  );
+}
+
+function WalletAction() {
+  const [signatureMessage, setSignatureMessage] = useState("");
+
+  const { data, isError, isLoading, isSuccess, signMessage } = useSignMessage();
+  return (
+    <div>
+      <form>
+        <label>
+          Enter the message to be signed:
+          <input
+            type="text"
+            value={signatureMessage}
+            onChange={(e) => setSignatureMessage(e.target.value)}
+          />
+        </label>
+      </form>
+      <button
+        disabled={isLoading}
+        onClick={() =>
+          signMessage({
+            message: signatureMessage,
+          })
+        }
+      >
+        Sign message
+      </button>
+      {isSuccess && <div> SUCCESS, Signature: {data}</div>}
+      {isError && <div>Error signing message</div>}
     </div>
   );
 }
@@ -76,170 +103,246 @@ function WalletBalance(params: { address: `0x${string}` }) {
   });
 
   if (isLoading) return <div>Fetching balance…</div>;
-  if (isError) return <div>Error fetching balance.</div>;
+  if (isError) return <div>Error fetching balance</div>;
   return (
     <div>
-      <p>Balance: <b>{data?.formatted} {data?.symbol}</b></p>
+      Balance: {data?.formatted} {data?.symbol}
     </div>
   );
 }
 
+
 function TokenName() {
   const { data, isError, isLoading } = useContractRead({
     address: "0x28ee359f1Cee296a0813e35e8c61d16fA4F5388e",
-    abi: tokenJson.abi,
+    abi: [
+      {
+        constant: true,
+        inputs: [],
+        name: "name",
+        outputs: [
+          {
+            name: "",
+            type: "string",
+          },
+        ],
+        payable: false,
+        stateMutability: "view",
+        type: "function",
+      },
+    ],
     functionName: "name",
   });
 
   const name = typeof data === "string" ? data : 0;
 
-  if (isLoading) return <p>Fetching name…</p>;
-  if (isError) return <p>Error fetching name.</p>;
-  return <p>Token name: {name}</p>;
+  if (isLoading) return <div>Fetching name…</div>;
+  if (isError) return <div>Error fetching name</div>;
+  return <div>Token name: {name}</div>;
 }
 
 function TokenBalance(params: { address: `0x${string}` }) {
   const { data, isError, isLoading } = useContractRead({
     address: "0x28ee359f1Cee296a0813e35e8c61d16fA4F5388e",
-    abi: tokenJson.abi,
+    abi: [
+      {
+        constant: true,
+        inputs: [
+          {
+            name: "_owner",
+            type: "address",
+          },
+        ],
+        name: "balanceOf",
+        outputs: [
+          {
+            name: "balance",
+            type: "uint256",
+          },
+        ],
+        payable: false,
+        stateMutability: "view",
+        type: "function",
+      },
+    ],
     functionName: "balanceOf",
     args: [params.address],
   });
 
-  const balance = typeof data === "bigint" ? data : 0;
+  const balance = typeof data === "number" ? data : 0;
 
-  if (isLoading) return <p>Fetching balance...</p>;
-  if (isError) return <p>Error fetching balance.</p>;
-  return <p>Token balance: <b>{Number(balance)}</b> decimal units of <b>VoteToken2</b>.</p>;
+  if (isLoading) return <div>Fetching balance…</div>;
+  if (isError) return <div>Error fetching balance</div>;
+  return <div>Balance: {balance}</div>;
 }
 
-function SeeVotingPower(params: { address: `0x${string}` }) {
-  const { data, isError, isLoading } = useContractRead({
-    address: "0xf000ef058FF6851b12Ff35F5176BF4Ef46f2f7B9",
-    abi: ballotJson.abi,
-    functionName: "votingPower",
-    args: [params.address],
-  });
+function TokenAddressFromApi() {
+  const [data, setData] = useState<{ address: string }>();
+  const [isLoading, setLoading] = useState(true);
 
-  const votePower = typeof data === "bigint" ? data : 0;
+  useEffect(() => {
+    fetch("http://localhost:3001/contract-address")
+      .then((res) => res.json())
+      .then((data) => {
+        setData(data);
+        setLoading(false);
+      });
+  }, []);
 
-  if (isLoading) return <p>Fetching voting power...</p>
-  if (isError) return <p>Error fetching voting power.</p>
-  return <p>Voting power: <b>{Number(votePower)}</b></p>
+  if (isLoading) return <p>Loading token address from API...</p>;
+  if (!data) return <p>No token address information</p>;
+
+  return (
+    <div>
+      <p>Token address from API: {data.address}</p>
+    </div>
+  );
 }
 
-function DelegateVote(params: { address: `0x${string}` | undefined }) {
-  const [data, setData] = useState<any>(null);
+function ReuqestTokensToBeMinted(params: {address: `0x${string}`}) {
+  const [data, setData] = useState<{ address: string }>();
   const [isLoading, setLoading] = useState(false);
+  const body = {address:params.address}
+
+  if (isLoading) return <p>Requesting tokens from API...</p>;
 
   const requestOptions = {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ address: params.address })
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({address: params.address})
   };
 
-  if (isLoading) return (
-    <div className={styles.button}>
-      Delegating votes with API...
-    </div>
-  )
-
-  if (!data) return <p>
+  if (!data) return (
     <button
-        disabled={isLoading}
-        className={styles.button}
-        onClick={() => {
-          setLoading(true);
-          fetch("http://localhost:3001/self-delegate", requestOptions)
+      disabled={isLoading}
+      onClick={() => {
+        setLoading(true);
+        fetch("http://localhost:3001/mint-tokens", requestOptions)
           .then((res) => res.json())
           .then((data) => {
             setData(data);
-            setLoading(false)
+          setLoading(false);
           });
-        }}
+      }}
     >
-      Delegate Votes
-    </button>
-  </p>;
+    Request tokens
+  </button>);
 
-  const hash = String(data.txHash);
-  const ETHScanLink = "https://sepolia.etherscan.io/tx/" + hash;
-  const shortHash = hash.slice(0,5) + "..." + hash.slice(-3)
-
-  return (
-    <div className={styles.buttonTXConf}>
-      Tx hash: <a href={ETHScanLink}
-        target="_blank"
-        rel="noreferrer noopener"
-      >
-        {shortHash}
-      </a>
-    </div>
-  )
+return (
+  <div>
+    <p>Mint Result: {data.success ? 'Success' : 'Failure'}</p>
+    <p>Mint Tx Hash: {data.txHash}</p>
+  </div>
+);
 }
 
-function PlaceVote() {
-  return (
-    <button className={styles.button}>
-      <p>Place Vote</p>
-    </button>
-  )
+function TransferTokens() {
+  const { config } = usePrepareSendTransaction();
+  const { data, isLoading, isSuccess, sendTransaction } = useSendTransaction(config)
+  const [to, setTo] = useState("");
+  const [value, setValue] = useState("");
+
+
+  if (isLoading) return <p>Requesting transfer from API...</p>;
+
+      const objStr = {
+        to: to,
+        value: value,
+      };
+
+      const requestOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(objStr)
+      };
+
+
+  if (!data) return (
+    <><div>
+      <form>
+        <label>
+          Enter 'to' address':
+          <input
+            type="text"
+            value={to}
+            onChange={(e) => setTo(e.target.value)} />
+        </label>
+      </form>
+      <form>
+        <label>
+          Enter amount of tokens to transfer:
+          <input
+            type="number"
+            value={value}
+            onChange={(e) => setValue(e.target.value)} />
+        </label>
+      </form>
+    </div><div>
+        <button
+          //disabled={isLoading} 
+          onClick={() => fetch("http://localhost:3001/transfer-tokens", requestOptions)}>
+
+          Send Tokens
+
+        </button>
+        {isLoading && <div>Check Wallet</div>}
+        {isSuccess && <div>Transaction: {JSON.stringify(data)}</div>}
+      </div></>
+    )
 }
 
-function SeeCurrentVotes() {
-  return (
-    <button className={styles.button}>
-      <p>See Current Votes</p>
-    </button>
-  )
-}
 
-function MintTokens(params: { address: `0x${string}` | undefined }) {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setLoading] = useState(false);
+function VoteWithToken() {
+  const { config } = usePrepareSendTransaction();
+  const { data, isLoading, isSuccess, sendTransaction } = useSendTransaction(config)
+  const [proposalId, setProposalId] = useState("");
+  const [amount, setAmount] = useState("");
 
-  const requestOptions = {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ address: params.address })
-  };
 
-  if (isLoading) return (
-    <div className={styles.button}>
-      Requesting tokens from API...
-    </div>
-  )
+  if (isLoading) return <p>Requesting transfer from API...</p>;
 
-  if (!data) return <p>
-    <button
-        disabled={isLoading}
-        className={styles.button}
-        onClick={() => {
-          setLoading(true);
-          fetch("http://localhost:3001/mint-tokens", requestOptions)
-          .then((res) => res.json())
-          .then((data) => {
-            setData(data);
-            setLoading(false)
-          });
-        }}
-    >
-      Request Tokens
-    </button>
-  </p>;
+      const objStr = {
+        proposalId: proposalId,
+        amount: amount,
+      };
 
-  const hash = String(data.txHash);
-  const ETHScanLink = "https://sepolia.etherscan.io/tx/" + hash;
-  const shortHash = hash.slice(0,5) + "..." + hash.slice(-3)
+      const requestOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(objStr)
+      };
 
-  return (
-    <div className={styles.buttonTXConf}>
-      Tx hash: <a href={ETHScanLink}
-        target="_blank"
-        rel="noreferrer noopener"
-      >
-        {shortHash}
-      </a>
-    </div>
-  )
+
+  if (!data) return (
+    <><div>
+      <form>
+        <label>
+          Enter proposal id:
+          <input
+            type="text"
+            value={proposalId}
+            onChange={(e) => setProposalId(e.target.value)} />
+        </label>
+      </form>
+      <form>
+        <label>
+          Enter amount of tokens to vote with:
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)} />
+        </label>
+      </form>
+    </div><div>
+        <button
+          //disabled={isLoading} 
+          onClick={() => fetch("http://localhost:3001/vote", requestOptions)}>
+
+          Vote Now
+
+        </button>
+        {isLoading && <div>Check Wallet</div>}
+        {isSuccess && <div>Transaction: {JSON.stringify(data)}</div>}
+      </div></>
+    )
 }
